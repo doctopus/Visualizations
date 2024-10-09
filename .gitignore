@@ -1,0 +1,27 @@
+.DS_Store
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+#Dataspell configurations
+.idea/
+# Log Files
+*.log
+# Figures 
+*.png
+*.pdf
+*.tiff
+*.xlsx
+# Ignore all files in io directory
+input/*
+output/*
+
+# Except these files in those directory
+!README.md.png
+!input/*.example
+!input/GSEA/
+!input/GSEA/*.gmt
+!input/*.example
+!output/*.example
+!output/figures/
+!output/figures/README.md.png
