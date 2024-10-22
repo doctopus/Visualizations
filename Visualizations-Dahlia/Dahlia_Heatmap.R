@@ -14,7 +14,7 @@ progression_data <- read.csv("input/P vs NP vs HC.csv", header = TRUE, check.nam
 # Transpose the gbm_metab data
 transposed_gbm_metab <- gbm_metab %>% t()
 
-
+I have two dataframes gbm_metab_info with the name of metabolites as column names and
 
 transposed_gbm_metab <- cbind(Samples = rownames(transposed_gbm_metab), transposed_gbm_metab)
 

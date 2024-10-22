@@ -14,9 +14,10 @@
 # Data Files
 *.txt
 *.xlsx
+*.csv
 # Ignore all files in io directory
-input/*
-output/*
+*/input/*
+*/output/*
 
 # Except these files in those directory
 !README.md.png
