@@ -79,11 +79,18 @@ pfs_pca <- create_pca_plots(
   gbm_metab_info,
   gbm_sample_info_combined,
   "PFS",
-  "Metabolite Profiles by PFS Status",
+  "Metabolite Profiles by PFS",
   custom_labels = list("PFS Status" = c("0" = "Low", "1" = "Medium", "2" = "High"))  # If you want to rename PFS categories
 )
 
-
+# Create PCA plot for GBM categories
+gbm_pca <- create_pca_plots(
+  metabData,
+  metabGroups,
+  "GBM",
+  "Metabolite Profiles in Control vs Glioblastoma",
+  custom_labels = list("Diagnosis" = c("0" = "Control", "1" = "Glioblastoma"))
+)
 # Display the plots
 print(gbm_pca$plot + 
         scale_color_manual(name = "Diagnosis",
@@ -91,9 +98,19 @@ print(gbm_pca$plot +
                            labels = c("0" = "Control", "1" = "Glioblastoma")
                            )
       )
+
+
+# Create PCA plot for PFS categories
+pfs_pca <- create_pca_plots(
+  metabData,
+  metabGroups,
+  "PFS",
+  "Metabolite Profiles by PFS",
+  custom_labels = list("PFS Status" = c("0" = "Low", "1" = "Medium", "2" = "High"))  # If you want to rename PFS categories
+)
 print(pfs_pca$plot + 
         scale_color_manual(name = "PFS Status",
-                           values = c("0" = "#27AE60", "1" = "#F4D03F", "2" = "#E67E22"),
+                           values = c("0" = "#F4D03F", "1" = "#E67E22", "2" = "#049193"),
                            labels = c("0" = "PFS<9Months", "1" = "PFS>9Months", "2" = "Control")
                            )
         )

@@ -6,15 +6,83 @@ library(tidyverse)
 
 getwd()
 # setwd("/Users/i/Dropbox/Clinic3.0/Developer/RStudio/Visualizations/Visualizations-Dahlia")
+# setwd("C:/Users/beherat2/Dropbox/Clinic3.0/Developer/RStudio/Visualizations/Visualizations-Dahlia")
 
+options(scipen = 999)
 ########Real Data from Dahlia---- input: source csv output: gbm_metab_info, gbm_sample_info ----
 # gbm_metab <- read.csv("input/GBM_Metabolite_SourceData.csv", header = TRUE, check.names = FALSE)
 gbm_metab <- read.csv("input/GBM + Healthy Controls for ClustVis.csv", header = TRUE, check.names = FALSE)
 progression_data <- read.csv("input/P vs NP vs HC.csv", header = TRUE, check.names = FALSE)
+progression_data_superset <- read.csv("input/P vs NP.csv", header = TRUE, check.names = FALSE)
 progression_data_example <- read.csv("input/PFS_sample_data.csv", header = TRUE, check.names = FALSE)
-# Transpose the gbm_metab data
-transposed_gbm_metab <- gbm_metab %>% t()
 
+#Datawrangling progression_data_superset
+progression_superset <- progression_data_superset %>% select(-(last_col(offset=1):last_col())) #Remove redundant columns
+progression_superset <- progression_superset %>% slice(1:(n() - 3)) #Remove redundant rows
+progression_superset <- progression_superset %>% mutate(`Sample Name` = str_remove(`Sample Name`, ' \\(uM\\)')) #Remove (uM) in Sample Name
+progression_superset$`Sample Name` <- tools::toTitleCase(progression_superset$`Sample Name`) #Sentence Case
+# progression_superset <- as.data.frame(transposed_gbm_metab) %>% mutate(GBM = as.numeric(GBM))
+progression_superset <- progression_superset %>% mutate(`Sample Name` = ifelse(row_number() == 1, "PFS", `Sample Name`)) #First row name as PFS
+progression_superset <- progression_superset %>% rename(Samples = `Sample Name`) #Rename Sample Name Column as Samples
+# progression_superset <- progression_superset %>% mutate(across(-c(Samples), ~as.numeric(.))) # mutate_all(~as.numeric(as.character(.)))
+progression_superset <- progression_superset %>% mutate(across(-c(Samples), ~as.numeric(as.character(.)))) # mutate_all(~as.numeric(as.character(.)))
+#Make metabData_pfs_superset
+metabData_pfs_superset <- progression_superset[-1, ]
+rownames(metabData_pfs_superset) <- metabData_pfs_superset$Samples
+metabData_pfs_superset <- metabData_pfs_superset %>% select(-Samples)
+
+#Make metabGroups_pfs_superset
+metabGroups_pfs_superset <- progression_superset %>% t() %>% as.data.frame()
+colnames(metabGroups_pfs_superset) <- as.character(unlist(metabGroups_pfs_superset[1, ]))
+metabGroups_pfs_superset <- metabGroups_pfs_superset[-1, ]
+metabGroups_pfs_superset <- metabGroups_pfs_superset %>% select(PFS) #Keep PFS only
+
+metabGroups_pfs_superset <- metabGroups_pfs_superset %>% mutate(PFS =as.numeric(PFS)) %>% mutate(PFS=as.factor(PFS))
+
+############START of diff: Compare datasets metabData and metabData_pfs_supergroup----
+
+library(dplyr)
+
+# Create temporary data frames with row names as a column (metabData)
+metabData_temp <- data.frame(rowname = rownames(metabData), metabData, check.names = FALSE)
+metabData_pfs_superset_temp <- data.frame(rowname = rownames(metabData_pfs_superset), metabData_pfs_superset, check.names = FALSE)
+
+# Get the common row names
+common_rows <- intersect(metabData_temp$rowname, metabData_pfs_superset_temp$rowname)
+
+# Identify the common columns between the datasets
+common_cols <- intersect(colnames(metabData_temp)[-1], colnames(metabData_pfs_superset_temp))
+
+# Merge the datasets based on row names
+merged_data <- inner_join(metabData_temp, metabData_pfs_superset_temp, by = "rowname")
+
+# Select only the common columns
+merged_data <- merged_data %>%
+  select(rowname, matches(paste0(common_cols, "\\.(x|y)$")))
+
+# Calculate the differences and create new columns
+for (col in common_cols) {
+  new_column_name <- col  # Remove the .x suffix
+  merged_data <- merged_data %>%
+    mutate({{new_column_name}} := .data[[paste0(col, ".x")]] - .data[[paste0(col, ".y")]])
+}
+
+# Select the columns without .x and .y suffixes
+subtracted_columns <- merged_data %>%
+  select(rowname, all_of(common_cols)) %>% mutate(across(-c(rowname), ~as.numeric(.))) # mutate_all(~as.numeric(as.character(.)))
+
+diffdata <- subtracted_columns %>%
+  mutate(across(-rowname, ~replace(., . == 0 | grepl("^0.0+$", as.character(.)) | grepl("^0e\\+00$", as.character(.)), NA)))
+
+# View the resulting subtracted columns
+view(diffdata)
+
+############END of diff----
+
+# Transpose the gbm_metab data
+# transposed_gbm_metab <- gbm_metab %>% t() #[For GBM Dataset] [INPUT_NEEDED]
+transposed_gbm_metab <- progression_data %>% select(-(last_col(offset =2):last_col())) %>% t() #[INPUT_NEEDED]For PFS Data
+  
 transposed_gbm_metab <- cbind(Samples = rownames(transposed_gbm_metab), transposed_gbm_metab)
 
 # Reset the row names to NULL
@@ -24,15 +92,37 @@ transposed_gbm_metab <- cbind(Samples = rownames(transposed_gbm_metab), transpos
 colnames(transposed_gbm_metab) <- as.character(unlist(transposed_gbm_metab[1, ]))
 transposed_gbm_metab <- transposed_gbm_metab[-1, ]
 
+### Extra steps for PFS data
+transposed_gbm_metab <- as.data.frame(transposed_gbm_metab)
+# Remove the ending words of " (uM)" for all other columns
+# transposed_gbm_metab <- transposed_gbm_metab %>% rename_all(function(x) gsub(" \\(uM\\)", "", x))
+#Remove (uM) and Capitalize
+transposed_gbm_metab <- transposed_gbm_metab %>%
+  rename_all(~ str_to_title(gsub(" \\(uM\\)", "", .)))
+#Imputations if any
+transposed_gbm_metab["1536", "3-Hydroxylhippuric Acid"] <- 0.00
 
+# Rename the columns
+colnames(transposed_gbm_metab)[1] <- "Samples"
+
+colnames(transposed_gbm_metab)[2] <- "PFS"
+
+# Convert values to numerical with decimals
+transposed_gbm_metab <- transposed_gbm_metab %>% mutate(across(-c(Samples), as.numeric))
+
+transposed_data_final <- transposed_gbm_metab %>% mutate(PFS =as.factor(PFS)) #For PFS
+####Extra step ENDS for PFS data
+
+### Extra steps for GBM data
 colnames(transposed_gbm_metab)[1] <- "Samples"
 
 transposed_gbm_metab <- as.data.frame(transposed_gbm_metab) %>% 
   mutate(GBM = as.numeric(GBM))
+####Extra step ENDS for GBM data
 
 #Keep only first two columns
-gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(GBM =as.factor(GBM))
-
+# gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(GBM =as.factor(GBM)) #[INPUT_NEEDED]
+gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(PFS =as.factor(PFS)) #For PFS
 #Make the Sample column as the rownames and remove that column
 # rownames(gbm_sample_info) <- gbm_sample_info$Samples
 
@@ -43,7 +133,11 @@ gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(GBM =as.facto
 gbm_sample_info <- gbm_sample_info %>% select(-Samples)
 
 gbm_sample_info <- as.data.frame(gbm_sample_info)
-
+metabGroups <- gbm_sample_info
+check_counts <- metabGroups %>% 
+  filter(PFS == 1) %>% 
+  nrow()
+metabGroups_subset <- metabGroups %>% filter(!grepl("^ch", rownames(metabGroups)))
 # colnames(gbm_sample_info)[1] <- "GBM"
 
 gbm_sample_info_combined <- full_join(gbm_sample_info, progression_data_example, by = "Samples")
@@ -52,11 +146,30 @@ rownames(gbm_sample_info_combined) <- gbm_sample_info_combined$Samples
 gbm_sample_info_combined <- gbm_sample_info_combined %>% select(-Samples)
 
 
-#Prepare gbm_metab_info
-gbm_metab_info <- gbm_metab[-1, ]
+#Prepare gbm_metab_info [USE alternative method for PFS data]
+# gbm_metab_info <- progression_data[-1, ] #[INPUT_NEEDED: For PFS]
+gbm_metab_info <- gbm_metab[-1, ] #[INPUT_NEEDED: For GBM]
 rownames(gbm_metab_info) <- gbm_metab_info[, 1]
 # Remove the first column from the dataset
 gbm_metab_info <- gbm_metab_info[, -1]
+
+##Extra Steps for PFS Data
+# Remove the ending words of " (uM)" for all other columns
+gbm_metab_info <- gbm_metab_info %>% rename_all(function(x) gsub(" \\(uM\\)", "", x))
+
+gbm_metab_info["3-hydroxylhippuric acid (uM)", "1536"] <- 0.00
+#Remove last three columns
+gbm_metab_info <- gbm_metab_info %>% select(-(last_col(offset =2):last_col()))
+# Convert values to numerical with decimals
+gbm_metab_info <- gbm_metab_info %>% mutate_if(is.character,as.numeric)
+##Extra Steps for PFS Data ends
+metabData <- gbm_metab_info #for GBM Data
+
+#Alternative way to process data from transposed_data_final
+metabData <- transposed_data_final %>% select(-c(PFS, Samples)) %>% t() %>% as.data.frame()
+metabData_subset <- metabData %>% select(!starts_with("ch"))
+##Now I have gbm_metab_info and gbm_sample_info
+##Now I have metabData and metabGroups
 
 ########Sample Data---- START input: sample data csv, output: data_metab_final, sample_metab ----
 data_metab <- read.xlsx("input/Metabolomics_Sample_Dataset.xlsx", sheet="Sheet1", colNames= TRUE)
@@ -90,7 +203,8 @@ sample_metab <- sample_metab[, -which(colnames(sample_metab) == "Sample.Name")]
 
 #Now I have two datasets to start with; data_metab_final and the sample_metab tables
 ########Sample Data---- End of Processing ----
-####PLOT-HEATMAP Dahlia Data----
+####PLOT-HEATMAP Dahlia GBM Data----
+BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
 library(circlize)
 library(grid)
@@ -108,7 +222,7 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
   sample_data$GBM <- factor(sample_data$GBM, levels = experiment_order)
   
   # Create color vectors for each annotation
-  slide_colors <- setNames(c("#707070", "#FF3079"), experiment_order)#, "#049193", "#5B2897"
+  slide_colors <- setNames(c("#EC756B", "#5399CA"), experiment_order)#, "#049193", "#5B2897", pink#FF3079
   # neuron_colors <- setNames(c("#007DEF", "#F08C00"), sex_order)
   
   # Create a diverging color palette for z-Score Normalized data
@@ -171,8 +285,12 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
                 # row_title_side = c("left", "right"),
                 row_names_gp = gpar(fontsize = 20, fontface = "bold"),
                 top_annotation = ha_top,
-                column_split = sample_data$GBM, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
-                column_order = column_order, #Needed for matching legend order with column order
+                clustering_distance_rows = "euclidean",
+                clustering_method_rows = "ward.D", #default is complete, ward is renamed to ward.D and there is ward.D2
+                clustering_distance_columns = "euclidean",
+                clustering_method_columns = "ward.D",
+                # column_split = sample_data$GBM, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
+                # column_order = column_order, #Needed for matching legend order with column order
                 # column_gap = unit(2, "mm"), #Option
                 border = TRUE, #Option
                 show_heatmap_legend = FALSE  # Hide default heatmap legend
@@ -247,7 +365,7 @@ scale_rows <- function(x) {
   (x - mean(x)) / sd(x)
 }
 # Apply scaling to each row
-scaled_data <- t(apply(gbm_metab_info, 1, scale_rows))
+scaled_data <- t(apply(metabData, 1, scale_rows))
 # In case any rows have standard deviation of 0 (constant values),
 # they will result in NaN. We can replace these with 0:
 scaled_data[is.nan(scaled_data)] <- 0
@@ -256,10 +374,189 @@ scaled_data[is.nan(scaled_data)] <- 0
 # Plot and save the heatmap
 plot_and_save_heatmap_gbm(
   scaled_data, #data_metab_final or scaled_data
-  gbm_sample_info, 
-  "GBM Metabolites", 
-  "25_GBM_Metabolite_Clustered_No Columns_No Scale Labels_Max Abs Range Full -Labels - Legend bottom -Column Split -Capped.pdf"
+  metabGroups, 
+  "Metabolites in GBM vs Control", 
+  "39_GBM_Metabolite_No Column Split eucledian and ward.D both rows and columns.pdf"
 )
+
+################################################-
+####PLOT-HEATMAP Dahlia PFS Data----
+BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
+library(circlize)
+library(grid)
+create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
+  # Ensure sample_data is in the same order as count_scores columns
+  sample_data <- sample_data[colnames(count_scores), , drop = FALSE]
+  
+  # Define the desired order for Experiment
+  experiment_order <- c(0, 1) #,2
+  # sex_order <- c("Male", "Female")
+  
+  # Convert Sex and Experiment to factors with specified levels
+  # sample_data$Sex <- factor(sample_data$Sex, levels = sex_order)
+  sample_data$PFS <- factor(sample_data$PFS, levels = experiment_order)
+  
+  # Create color vectors for each annotation
+  slide_colors <- setNames(c("#F4D03F", "#049193"), experiment_order)#,"#E67E22" "#049193", "#5B2897"
+  # neuron_colors <- setNames(c("#007DEF", "#F08C00"), sex_order)
+  
+  # Create a diverging color palette for z-Score Normalized data
+  # colors <- colorRampPalette(c("#377eb8", "white", "#e41a1c"))(101)
+  colors <- colorRampPalette(c("blue", "white", "red"))(101)
+  # max_abs <- max(abs(count_scores))
+  max_abs <- max(5, max(abs(count_scores))) #To cap the range of colors at 5. (The range is till 9, more than 5 would have only 21 extreme values)
+  breaks <- seq(-max_abs, max_abs, length.out = 101)
+  # breaks <- seq(-3, 12, length.out = 101)
+  
+  ################START-For Grouping by Sex [INPUT_NEEDED]
+  column_order <- order(sample_data$PFS)
+  # column_order <- order(sample_data$Sex, sample_data$Experiment) #Order columns first by Sex, then by Experiment
+  ################END-For Grouping by Sex  
+  
+  ################START-For Grouping by Experiment [INPUT_NEEDED]
+  # sample_data$OrderGroup <- paste(sample_data$Experiment, sample_data$Sex, sep="_")
+  # sample_data$OrderGroup <- factor(sample_data$OrderGroup,
+  #                                  levels = paste(rep(experiment_order, each=2), rep(sex_order, times=4), sep="_"))
+  # column_order <- order(sample_data$OrderGroup)
+  ################END-For Grouping by Experiment
+  
+  # Ensure count_scores and sample_data are in the correct order
+  count_scores <- count_scores[, column_order]
+  sample_data <- sample_data[column_order, , drop = FALSE]
+  
+  # Create top annotation with custom colors
+  ha_top <- HeatmapAnnotation(
+    # Sex = sample_data$Sex,
+    PFS = sample_data$PFS,
+    # col = list(Sex = neuron_colors, Experiment = slide_colors),
+    col = list(PFS = slide_colors),
+    show_annotation_name = TRUE,
+    annotation_name_side = "right",
+    gap = unit(2, "mm"),
+    annotation_name_gp = gpar(fontsize = 20, fontface = "bold"),
+    show_legend = FALSE  # Hide default legends for annotations
+  )
+  
+  
+  
+  
+  
+  
+  # Create a two-level split for columns
+  # column_split <- factor(paste(sample_data$Experiment, sample_data$Sex, sep = "_"),
+  #                        levels = paste(rep(experiment_order, each = 2), rep(sex_order, times = 4), sep = "_"))
+  
+  # Create main heatmap
+  ht <- Heatmap(count_scores,
+                name = paste(pathway, "Scores"),
+                col = colorRamp2(breaks, colors),
+                column_title = pathway,
+                column_title_gp = gpar(fontsize = 26, fontface = "bold", col = "black"),
+                cluster_rows = TRUE,
+                cluster_columns = TRUE,
+                show_row_names = TRUE,
+                show_column_names = FALSE,
+                row_title_gp = gpar(fontsize = 15, fontface = "bold"),
+                # row_title_side = c("left", "right"),
+                row_names_gp = gpar(fontsize = 20, fontface = "bold"),
+                top_annotation = ha_top,
+                # clustering_distance_rows = "euclidean",
+                # clustering_method_rows = "ward.D", #default is complete, ward is renamed to ward.D and there is ward.D2
+                # clustering_distance_columns = "euclidean",
+                # clustering_method_columns = "ward.D",
+                # column_split = sample_data$PFS, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
+                # column_order = column_order, #Needed for matching legend order with column order
+                # column_gap = unit(2, "mm"), #Option
+                border = TRUE, #Option
+                show_heatmap_legend = FALSE  # Hide default heatmap legend
+  )
+  
+  # Create custom legends
+  # sex_legend <- Legend(
+  #   labels = sex_order,
+  #   labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
+  #   legend_gp = gpar(fill = neuron_colors),
+  #   column_gap = unit(5, "mm"), row_gap = unit(2, "mm"),
+  #   title = "Sex",
+  #   title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
+  # )
+  # 
+  experiment_legend <- Legend(
+    # labels = experiment_order,
+    labels = c("Progressed", "Not Progressed"),
+    labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
+    legend_gp = gpar(fill = slide_colors),
+    row_gap = unit(2, "mm"),
+    title = "PFS",
+    title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
+  )
+  
+  expression_legend <- Legend(
+    col_fun = colorRamp2(breaks, colors),
+    at = c(-max_abs, 0, max_abs),
+    labels = c("Low", "Medium", "High"),
+    labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
+    column_gap = unit(5, "mm"), 
+    row_gap = unit(5, "mm"),
+    title = "Expression",
+    title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
+  )
+  
+  # Combine all legends into a single column
+  combined_legend <- packLegend(
+    # sex_legend,
+    experiment_legend,
+    expression_legend,
+    direction = "horizontal", #vertical or horizontal
+    gap = unit(5, "mm")
+  )
+  
+  num_rows <- nrow(count_scores)
+  total_height <- unit(min(15, max(10, num_rows * 0.4)), "inch")
+  
+  # Draw the heatmap with only the combined legend on the left/bottom
+  draw(ht, 
+       annotation_legend_side = "bottom",
+       annotation_legend_list = combined_legend,
+       padding = unit(c(2, 10, 2, 60), "mm"),#x, left, y, right
+       height = total_height)
+}
+plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, pathway, output_file) {
+  # Calculate height based on number of genes
+  # height <- max(12, nrow(normalizedCountsData) * 0.2)  # Adjust the multiplier (0.2) as needed
+  height <- 19
+  width <- 11 #16 or 10.5
+  
+  pdf(output_file, width = width, height = height)  # Increased width to accommodate legends
+  create_heatmap_pfs(normalizedCountsData, pathway, sample_data_subset)
+  dev.off()
+  print(create_heatmap_pfs(normalizedCountsData, pathway, sample_data_subset))
+  print(paste("Heatmap for", pathway, "pathway saved to", output_file))
+}
+
+#Z score Normalize the gbm_metab_info
+#Per Gene Scaling of filtered Normalized count  Data
+# Function to scale each row (gene) (Decide if to scale across all samples or after the filtering below)
+scale_rows <- function(x) {
+  (x - mean(x)) / sd(x)
+}
+# Apply scaling to each row
+scaled_data <- t(apply(metabData_pfs_superset, 1, scale_rows))
+# In case any rows have standard deviation of 0 (constant values),
+# they will result in NaN. We can replace these with 0:
+scaled_data[is.nan(scaled_data)] <- 0
+
+
+# Plot and save the heatmap
+
+plot_and_save_heatmap_pfs(
+  scaled_data, #data_metab_final or scaled_data
+  metabGroups_pfs_superset, 
+  "Metabolites by Progression", 
+  "49_PFS Metabolites New data -eucledian compond.pdf"
+)
+
 
 ####Plotting Both GBM and PFS Status WORKING----
 
