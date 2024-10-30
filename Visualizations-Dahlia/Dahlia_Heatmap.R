@@ -14,19 +14,20 @@ options(scipen = 999)
 gbm_metab <- read.csv("input/GBM + Healthy Controls for ClustVis.csv", header = TRUE, check.names = FALSE)
 progression_data <- read.csv("input/P vs NP vs HC.csv", header = TRUE, check.names = FALSE)
 # progression_data_superset <- read.csv("input/P vs NP.csv", header = TRUE, check.names = FALSE)
-progression_data_superset <- read.csv("input/P vs NP 20241028.csv", header = TRUE, check.names = FALSE)
+progression_data_superset <- read.xlsx("input/P vs NP 20241028.xlsx", check.names = FALSE)
 # progression_data_example <- read.csv("input/PFS_sample_data.csv", header = TRUE, check.names = FALSE)
 
 #Datawrangling progression_data_superset
-progression_superset <- progression_data_superset %>% select(-(last_col(offset=1):last_col())) #Remove redundant columns
-progression_superset <- progression_superset %>% slice(1:(n() - 3)) #Remove redundant rows
-progression_superset <- progression_superset %>% mutate(`Sample Name` = str_remove(`Sample Name`, ' \\(uM\\)')) #Remove (uM) in Sample Name
-progression_superset$`Sample Name` <- tools::toTitleCase(progression_superset$`Sample Name`) #Sentence Case
+# progression_superset <- progression_data_superset %>% select(-(last_col(offset=1):last_col())) #Remove redundant columns
+# progression_superset <- progression_superset %>% slice(1:(n() - 3)) #Remove redundant rows
+progression_superset <- progression_data_superset %>% mutate(`Sample.Name` = str_remove(`Sample.Name`, ' \\(uM\\)')) #Remove (uM) in Sample Name
+progression_superset$`Sample.Name` <- tools::toTitleCase(progression_superset$`Sample.Name`) #Sentence Case
 # progression_superset <- as.data.frame(transposed_gbm_metab) %>% mutate(GBM = as.numeric(GBM))
-progression_superset <- progression_superset %>% mutate(`Sample Name` = ifelse(row_number() == 1, "PFS", `Sample Name`)) #First row name as PFS
-progression_superset <- progression_superset %>% rename(Samples = `Sample Name`) #Rename Sample Name Column as Samples
+progression_superset <- progression_superset %>% mutate(`Sample.Name` = ifelse(row_number() == 1, "PFS", `Sample.Name`)) #First row name as PFS
+progression_superset <- progression_superset %>% rename(Samples = `Sample.Name`) #Rename Sample Name Column as Samples
 # progression_superset <- progression_superset %>% mutate(across(-c(Samples), ~as.numeric(.))) # mutate_all(~as.numeric(as.character(.)))
 progression_superset <- progression_superset %>% mutate(across(-c(Samples), ~as.numeric(as.character(.)))) # mutate_all(~as.numeric(as.character(.)))
+
 #Make metabData_pfs_superset
 metabData_pfs_superset <- progression_superset[-1, ]
 rownames(metabData_pfs_superset) <- metabData_pfs_superset$Samples
@@ -39,6 +40,9 @@ metabGroups_pfs_superset <- metabGroups_pfs_superset[-1, ]
 metabGroups_pfs_superset <- metabGroups_pfs_superset %>% select(PFS) #Keep PFS only
 
 metabGroups_pfs_superset <- metabGroups_pfs_superset %>% mutate(PFS =as.numeric(PFS)) %>% mutate(PFS=as.factor(PFS))
+
+#Datawrangling progression_data_superset_new
+
 
 ############START of diff: Compare datasets metabData and metabData_pfs_supergroup----
 
@@ -80,6 +84,7 @@ view(diffdata)
 
 ############END of diff----
 
+#Dahlia GBM 3 Groups PFS 0, PFS 1, Control 2 Data----
 # Transpose the gbm_metab data
 # transposed_gbm_metab <- gbm_metab %>% t() #[For GBM Dataset] [INPUT_NEEDED]
 transposed_gbm_metab <- progression_data %>% select(-(last_col(offset =2):last_col())) %>% t() #[INPUT_NEEDED]For PFS Data
@@ -382,7 +387,7 @@ plot_and_save_heatmap_gbm(
 
 ################################################-
 ####PLOT-HEATMAP Dahlia PFS Data----
-BiocManager::install("ComplexHeatmap")
+# BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
 library(circlize)
 library(grid)
@@ -399,7 +404,7 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
   sample_data$PFS <- factor(sample_data$PFS, levels = experiment_order)
   
   # Create color vectors for each annotation
-  slide_colors <- setNames(c("#F4D03F", "#049193"), experiment_order)#,"#E67E22" "#049193", "#5B2897"
+  slide_colors <- setNames(c("#F59F00", "#37B24D"), experiment_order)#, "#F4D03F", "#E67E22" "#049193", "#5B2897"
   # neuron_colors <- setNames(c("#007DEF", "#F08C00"), sex_order)
   
   # Create a diverging color palette for z-Score Normalized data
@@ -466,8 +471,8 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
                 # clustering_method_rows = "ward.D", #default is complete, ward is renamed to ward.D and there is ward.D2
                 # clustering_distance_columns = "euclidean",
                 # clustering_method_columns = "ward.D",
-                # column_split = sample_data$PFS, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
-                # column_order = column_order, #Needed for matching legend order with column order
+                column_split = sample_data$PFS, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
+                column_order = column_order, #Needed for matching legend order with column order
                 # column_gap = unit(2, "mm"), #Option
                 border = TRUE, #Option
                 show_heatmap_legend = FALSE  # Hide default heatmap legend
@@ -519,15 +524,16 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
   # Draw the heatmap with only the combined legend on the left/bottom
   draw(ht, 
        annotation_legend_side = "bottom",
+       # x = unit(1, "cm"), y = unit(1, "cm"), just = c("right", "top"),
        annotation_legend_list = combined_legend,
-       padding = unit(c(2, 10, 2, 60), "mm"),#x, left, y, right
+       padding = unit(c(2, 20, 2, 80), "mm"),#x, left, y, right
        height = total_height)
 }
 plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, pathway, output_file) {
   # Calculate height based on number of genes
   # height <- max(12, nrow(normalizedCountsData) * 0.2)  # Adjust the multiplier (0.2) as needed
   height <- 19
-  width <- 11 #16 or 10.5
+  width <- 13 #16 or 10.5
   
   pdf(output_file, width = width, height = height)  # Increased width to accommodate legends
   create_heatmap_pfs(normalizedCountsData, pathway, sample_data_subset)
@@ -555,7 +561,7 @@ plot_and_save_heatmap_pfs(
   scaled_data, #data_metab_final or scaled_data
   metabGroups_pfs_superset, 
   "Metabolites by Progression", 
-  "49_PFS Metabolites New data -eucledian compond.pdf"
+  "58_PFS Metabolites New data -eucledian complete -split.pdf"
 )
 
 
