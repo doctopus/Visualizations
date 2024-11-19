@@ -27,46 +27,45 @@ wide_data <- data %>%
 # Step 3: Calculate log2 ratios for each cytokine
 cytokine_ratios <- data.frame(Subject = wide_data$Subject)
 
-##Select Either Log2Fold Changes or Standardized Fold Changes across cytokine or all
-# Step 4: Calculate ratios for each cytokine
+##Select Either of three Step4: Log2Fold Changes or Standardized Fold Changes across cytokine or all
+# Step 4: Log2Fold Change
 
-# for(cytokine in cytokine_cols) {
-#   t1_col <- paste0(cytokine, "_T1")
-#   t2_col <- paste0(cytokine, "_T2")
-#   
-#   cytokine_ratios[[cytokine]] <- log2(wide_data[[t2_col]] / wide_data[[t1_col]])
-# }
+for(cytokine in cytokine_cols) {
+  t1_col <- paste0(cytokine, "_T1")
+  t2_col <- paste0(cytokine, "_T2")
+
+  cytokine_ratios[[cytokine]] <- log2(wide_data[[t2_col]] / wide_data[[t1_col]])
+}
 
 # Step 4: Calculate z-scores for fold changes per cytokine
 
 # for(cytokine in cytokine_cols) {
 #   t1_col <- paste0(cytokine, "_T1")
 #   t2_col <- paste0(cytokine, "_T2")
-#   
+# 
 #   # Calculate fold change first
 #   fold_changes <- wide_data[[t2_col]] / wide_data[[t1_col]]
-#   
+# 
 #   # Calculate z-score of fold changes
 #   cytokine_ratios[[cytokine]] <- (fold_changes - mean(fold_changes, na.rm = TRUE)) / sd(fold_changes, na.rm = TRUE)
 # }
 
 # Step 4: For global z-score across all cytokines:
-# First calculate all fold changes
-for(cytokine in cytokine_cols) {
-  t1_col <- paste0(cytokine, "_T1")
-  t2_col <- paste0(cytokine, "_T2")
-  
-  # Calculate fold change first
-  cytokine_ratios[[cytokine]] <- wide_data[[t2_col]] / wide_data[[t1_col]]
-}
 
-# Then apply z-score normalization across all values
-all_values <- unlist(cytokine_ratios[,-1])  # exclude Subject column
-global_mean <- mean(all_values, na.rm = TRUE)
-global_sd <- sd(all_values, na.rm = TRUE)
-
-# Apply global z-score normalization
-cytokine_ratios[,cytokine_cols] <- (cytokine_ratios[,cytokine_cols] - global_mean) / global_sd
+# for(cytokine in cytokine_cols) {
+#   t1_col <- paste0(cytokine, "_T1")
+#   t2_col <- paste0(cytokine, "_T2")
+#   
+#   # Calculate fold change first
+#   cytokine_ratios[[cytokine]] <- wide_data[[t2_col]] / wide_data[[t1_col]]
+# }
+# # Then apply z-score normalization across all values
+# all_values <- unlist(cytokine_ratios[,-1])  # exclude Subject column
+# global_mean <- mean(all_values, na.rm = TRUE)
+# global_sd <- sd(all_values, na.rm = TRUE)
+# 
+# # Apply global z-score normalization
+# cytokine_ratios[,cytokine_cols] <- (cytokine_ratios[,cytokine_cols] - global_mean) / global_sd
 
 
 
@@ -82,25 +81,39 @@ ratio_matrix <- cytokine_ratios %>%
 # Set row names as subject numbers
 rownames(ratio_matrix) <- cytokine_ratios$Subject
 
+#Visualize the distribution of numbers of the matrix to decide if need to cap the color range
+hist(ratio_matrix, breaks = 50, main="Distribution of Log2 Fold Change ", xlab= "Log 2 Fold Change Values")
+
 # Calculate breaks for color scale
-max_abs_value <- max(abs(ratio_matrix[is.finite(ratio_matrix)]), na.rm = TRUE)
+# max_abs_value <- max(abs(ratio_matrix[is.finite(ratio_matrix)]), na.rm = TRUE)
+max_abs_value <- 2 #To Cap the range of colors at 2
 breaks <- seq(-max_abs_value, max_abs_value, length.out = 100)
 
 # Create color palette
 colors <- colorRampPalette(c("blue", "white", "red"))(99)
 
+# Define your desired order
+desired_order <- c(18, 25, 28, 2, 12, 9, 4)
+
+# Create a vector of positions that match your desired order
+row_order <- match(desired_order, rownames(ratio_matrix))
+
+# Reorder the matrix rows
+ratio_matrix <- ratio_matrix[row_order, ]
 # Plot heatmap
+
 pheatmap(
   t(ratio_matrix),  # Transpose to match your example
-  cluster_cols = TRUE,  # Cluster subjects
+  cluster_cols = FALSE,  # Cluster subjects
   cluster_rows = FALSE,  # Cluster cytokines
-  clustering_method = "complete",  # Default method. #Other method: "ward.D2"
-  clustering_distance_cols = "euclidean",  # Change distance method
-  treeheight_col = 50,                      # Adjust dendrogram height
+  # clustering_method = "complete",  # Default method. #Other method: "ward.D2"
+  # clustering_distance_cols = "manhattan",  # Default Method Eucledean
+  # column_order = column_order,
+  treeheight_col = 25,                      # Adjust dendrogram height
   na_col = "grey",     # Color for NA values
   breaks = breaks,
   color = colors,
-  main = "Cytokine Expression Changes\n(Global Z-score normalization across all measurements)", #"Cytokine Expression Changes\n(Z-scores calculated per cytokine)", #"Cytokine Expression Ratio (log2(T2/T1))", #
+  main = "Cytokine Expression Ratio (log2(T2/T1))", #"Cytokine Expression Changes\n(Global Z-score normalization across all measurements)", #"Cytokine Expression Changes\n(Z-scores calculated per cytokine)", #, #
   fontsize_row = 15,
   fontsize_col = 15,
   display_numbers = TRUE,

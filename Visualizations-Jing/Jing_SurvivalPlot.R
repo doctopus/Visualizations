@@ -17,13 +17,14 @@ data_surv <- data_survival %>%
   rename_with(~ gsub("\\.\\.|\\.+", "_", .x)) %>%  # Replace .. and . with _
   rename(Subject = Subject_) %>%                    # Fix Subject column name
   select(Subject, ttProg, ttDeath, ttLfp) %>%      # Select needed columns
-  mutate(Sex = ifelse(Subject == 18, 0, 1))        # Add Sex column
+  mutate(Sex = ifelse(Subject == 18, 0, 1)) %>%       # Add Sex column
+  filter(!Subject %in% c(1,3,8))
 
 # Define status attributes with stroke parameter
 status_info <- data.frame(
   status = c("Death", "Last Followup", "Progression"),
   symbol = c(4, 1, 18),
-  color = c("#495057", "darkgreen", "#F59F00"),
+  color = c("#495057", "darkgreen", "#E67700"),
   size = c(4, 5, 7),  # Reduced size for Death from 8 to 6
   stroke = c(2, 2, 1)
 )
@@ -42,17 +43,10 @@ ggplot() +
              aes(x = ttProg, 
                  y = reorder(factor(Subject), ttLfp),
                  shape = "Progression"),
-             color = "#F59F00",
+             color = "#E67700",
              size = status_info$size[3],
              stroke = status_info$stroke[3]) +
-  
-  geom_point(data = subset(data_surv, !is.na(ttDeath)), 
-             aes(x = ttDeath, 
-                 y = reorder(factor(Subject), ttLfp),
-                 shape = "Death"),
-             color = "#495057",
-             size = status_info$size[1],
-             stroke = status_info$stroke[1]) +
+
   
   geom_point(data = data_surv, 
              aes(x = ttLfp, 
@@ -61,6 +55,14 @@ ggplot() +
              color = "darkgreen",
              size = status_info$size[2],
              stroke = status_info$stroke[2]) +
+  
+  geom_point(data = subset(data_surv, !is.na(ttDeath)), 
+             aes(x = ttDeath, 
+                 y = reorder(factor(Subject), ttLfp),
+                 shape = "Death"),
+             color = "#495057",
+             size = status_info$size[1],
+             stroke = status_info$stroke[1]) +
   
   # Scales
   scale_x_continuous(breaks = seq(0, 30, 5)) +
