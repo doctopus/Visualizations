@@ -16,6 +16,7 @@ progression_data <- read.csv("input/P vs NP vs HC.csv", header = TRUE, check.nam
 # progression_data_superset <- read.csv("input/P vs NP.csv", header = TRUE, check.names = FALSE)
 progression_data_superset <- read.xlsx("input/P vs NP 20241028.xlsx", check.names = FALSE)
 # progression_data_example <- read.csv("input/PFS_sample_data.csv", header = TRUE, check.names = FALSE)
+progression_data_nov20 <- read.xlsx("input/Progressed vs Non-Progressed Metabolites (All 61).xlsx", check.names = FALSE)
 
 #Datawrangling progression_data_superset
 # progression_superset <- progression_data_superset %>% select(-(last_col(offset=1):last_col())) #Remove redundant columns
