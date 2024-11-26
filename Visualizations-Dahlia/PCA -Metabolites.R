@@ -102,16 +102,16 @@ print(gbm_pca$plot +
 
 # Create PCA plot for PFS categories
 pfs_pca <- create_pca_plots(
-  metabData_pfs_superset,
-  metabGroups_pfs_superset,
+  metabData_nov20, #metabData_pfs_superset,
+  metabGroups_nov20, #metabGroups_pfs_superset
   "PFS",
-  "Metabolite Profiles by PFS",
-  custom_labels = list("PFS Status" = c("0" = "Not Progressed", "1" = "Progressed"))  # If you want to rename PFS categories
+  "Metabolite Profiles by Progression in GBM",
+  custom_labels = list("PFS Status" = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months"))  # If you want to rename PFS categories
 )
 print(pfs_pca$plot + 
-        scale_color_manual(name = "PFS Status",
+        scale_color_manual(name = "Progression Status",
                            values = c("0" = "#F59F00", "1" = "#37B24D"),
-                           labels = c("0" = "Not Progressed", "1" = "Progressed")
+                           labels = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months")
                            )
         )
 
