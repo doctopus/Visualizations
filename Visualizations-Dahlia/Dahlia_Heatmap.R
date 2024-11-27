@@ -49,7 +49,9 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
   # Create a diverging color palette for z-Score Normalized data
   # colors <- colorRampPalette(c("#377eb8", "white", "#e41a1c"))(101)
   colors <- colorRampPalette(c("blue", "white", "red"))(101)
-  max_abs <- max(abs(count_scores))
+  # max_abs <- max(abs(count_scores))
+  # max_abs <- max(abs(count_scores[is.finite(count_scores)]), na.rm = TRUE)
+  max_abs <- 3
   # max_abs <- max(5, max(abs(count_scores))) #To cap the range of colors at 5. (The range is till 9, more than 5 would have only 21 extreme values)
   breaks <- seq(-max_abs, max_abs, length.out = 101)
   # breaks <- seq(-3, 12, length.out = 101)
@@ -99,11 +101,11 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
                 show_column_names = FALSE,
                 row_title_gp = gpar(fontsize = 15, fontface = "bold"),
                 # row_title_side = c("left", "right"),
-                row_names_gp = gpar(fontsize = 20, fontface = "bold"),
+                row_names_gp = gpar(fontsize = 20, fontface = "plain"),
                 top_annotation = ha_top,
-                clustering_distance_rows = "manhattan", #Default euclidean
+                clustering_distance_rows = "euclidean", #Default euclidean; other manhattan
                 clustering_method_rows = "ward.D", #default is complete, ward is renamed to ward.D and there is ward.D2
-                clustering_distance_columns = "manhattan", #Default euclidean
+                clustering_distance_columns = "euclidean", #Default euclidean; other manhattan
                 clustering_method_columns = "ward.D",
                 column_split = sample_data$PFS, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
                 column_order = column_order, #Needed for matching legend order with column order
@@ -124,9 +126,9 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
   # 
   experiment_legend <- Legend(
     # labels = experiment_order,
-    labels = c("Progressed at 9 months", "Not Progressed at 9 months"),
+    labels = rev(c("Progressed at 9 months", "Not Progressed at 9 months")), #Reverse names (need to reverse legend_gp too)
     labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
-    legend_gp = gpar(fill = slide_colors),
+    legend_gp = gpar(fill = rev(slide_colors)), #Reverse associated colors too (need to have labels rerversed too)
     row_gap = unit(2, "mm"),
     title = "PFS",
     title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
@@ -135,7 +137,7 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
   expression_legend <- Legend(
     col_fun = colorRamp2(breaks, colors),
     at = c(-max_abs, 0, max_abs),
-    labels = c("Low", "Medium", "High"),
+    # labels = c("Low", "Medium", "High"),
     labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
     column_gap = unit(5, "mm"), 
     row_gap = unit(5, "mm"),
@@ -163,17 +165,19 @@ create_heatmap_pfs <- function(count_scores, pathway, sample_data) {
        padding = unit(c(2, 20, 2, 80), "mm"),#x, left, y, right
        height = total_height)
 }
-plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, pathway, output_file) {
+plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, plot_title, base_filename) {
   # Calculate height based on number of genes
   # height <- max(12, nrow(normalizedCountsData) * 0.2)  # Adjust the multiplier (0.2) as needed
-  height <- 19
-  width <- 13 #16 or 10.5
+  height <- 20
+  width <- 18 #16 or 10.5
+  datetime <- format(Sys.time(), "%Y%m%d.%H%M%S")
+  fileName <- paste(datetime, base_filename, sep="_")
   
-  pdf(output_file, width = width, height = height)  # Increased width to accommodate legends
-  create_heatmap_pfs(normalizedCountsData, pathway, sample_data_subset)
+  pdf(fileName, width = width, height = height)  # Increased width to accommodate legends
+  create_heatmap_pfs(normalizedCountsData, plot_title, sample_data_subset)
   dev.off()
-  print(create_heatmap_pfs(normalizedCountsData, pathway, sample_data_subset))
-  print(paste("Heatmap for", pathway, "pathway saved to", output_file))
+  print(create_heatmap_pfs(normalizedCountsData, plot_title, sample_data_subset))
+  print(paste("Heatmap for", plot_title, "saved as", fileName))
 }
 
 #Z score Normalize the gbm_metab_info
@@ -194,7 +198,6 @@ log2_transform <- function(x) {
   log2(x + 1) # Add a small constant to avoid log(0); (1 is commonly used)
 }
 
-
 # #Version2: Log2 Function: Alternative versions if need to handle negative values:
 # log2_transform <- function(x) {
 #   sign(x) * log2(abs(x) + 1) # For negative values: sign(x) * log2(abs(x) + 1)
@@ -214,13 +217,70 @@ log2_data <- as.matrix(log2_transform(metabData_nov20))
 sum(is.infinite(log2_data))
 sum(is.na(log2_data))
 
+#Prepare File Name
+
 #### Plot and save the heatmap
 plot_and_save_heatmap_pfs(
   scaled_data, #log2_data or scaled_data
   metabGroups_nov20, 
   "Metabolites by Progression", 
-  "65_PFS Metabolites Nov20 Log2 data -rows cols manhattan ward -split -Experiment Order.pdf"
+  "70_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward -scale till 3.pdf"
 )
+
+
+create_heatmap <- function(data, groups, plot_title, base_filename) {
+  datetime <- format(Sys.time(), "%Y%m%d.%H%M%S")
+  fileName <- paste(datetime, base_filename, sep="_")
+  plotTitle <- plot_title
+  
+  plot_and_save_heatmap_pfs(
+    data,
+    groups,
+    plotTitle,
+    fileName
+  )
+}
+
+# Then call it like this:
+create_heatmap(
+  data = scaled_data,
+  groups = metabGroups_nov20,
+  plot_title = "Metabolites by Progression",
+  base_filename = "66_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward.pdf"
+)
+```
+
+2. Use inline creation of variables:
+  ```R
+plot_and_save_heatmap_pfs(
+  scaled_data,
+  metabGroups_nov20,
+  plotTitle = "Metabolites by Progression",
+  fileName = paste(format(Sys.time(), "%Y%m%d.%H%M%S"),
+                   "66_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward.pdf",
+                   sep="_")
+)
+```
+
+3. Modify the original function to handle the naming internally:
+  ```R
+plot_and_save_heatmap_pfs <- function(data, groups, base_title, base_filename) {
+  datetime <- format(Sys.time(), "%Y%m%d.%H%M%S")
+  fileName <- paste(datetime, base_filename, sep="_")
+  plotTitle <- base_title
+  
+  # Rest of your plotting code
+}
+
+# Then call it with just the base names:
+plot_and_save_heatmap_pfs(
+  scaled_data,
+  metabGroups_nov20,
+  "Metabolites by Progression",
+  "66_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward.pdf"
+)
+#Plot Histogram to see distribution of scaled data to decide if need to cap the color range
+hist(scaled_data, breaks = 50, main="Distribution Scaled Data", xlab= "Scaled Values of Metabolites")
 
 ################CURRENT ANALYSIS ENDS----
 
