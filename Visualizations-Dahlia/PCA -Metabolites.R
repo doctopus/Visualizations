@@ -102,7 +102,7 @@ print(gbm_pca$plot +
 
 # Create PCA plot for PFS categories
 pfs_pca <- create_pca_plots(
-  metabData_nov20, #metabData_pfs_superset,
+  metabData_nov20, #metabData_pfs_superset, #metabData_nov20, #Or plot PCA of filtered data of the top 20 metabolites metabData_nov20_top
   metabGroups_nov20, #metabGroups_pfs_superset
   "PFS",
   "Metabolite Profiles by Progression in GBM",
@@ -114,6 +114,22 @@ print(pfs_pca$plot +
                            labels = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months")
                            )
         )
+
+# Create PCA plot for PFS categories (TOP 20 Metabolites)
+pfs_pca_top <- create_pca_plots(
+  metabData_nov20_top, #metabData_pfs_superset, #metabData_nov20, #Or plot PCA of filtered data of the top 20 metabolites metabData_nov20_top
+  metabGroups_nov20, #metabGroups_pfs_superset
+  "PFS",
+  "Top Metabolite Profiles by Progression in GBM",
+  custom_labels = list("PFS Status" = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months"))  # If you want to rename PFS categories
+)
+print(pfs_pca_top$plot + 
+        scale_color_manual(name = "Progression Status",
+                           values = c("0" = "#F59F00", "1" = "#37B24D"),
+                           labels = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months")
+        )
+)
+
 
 # Optional: Save the plots with higher resolution
 # ggsave("gbm_pca_plot.pdf", gbm_pca$plot, width = 10, height = 8, dpi = 300)

@@ -169,7 +169,7 @@ plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, 
   # Calculate height based on number of genes
   # height <- max(12, nrow(normalizedCountsData) * 0.2)  # Adjust the multiplier (0.2) as needed
   height <- 20
-  width <- 12 #16 or 10.5
+  width <- 16 #16 or 10.5
   datetime <- format(Sys.time(), "%Y%m%d.%H%M%S")
   fileName <- paste(datetime, base_filename, sep="_")
   
@@ -229,10 +229,10 @@ scaled_data_top[is.nan(scaled_data_top)] <- 0
 
 #### Plot and save the heatmap
 plot_and_save_heatmap_pfs(
-  scaled_data_top, #log2_data or scaled_data or only the top metabolites (scaled_data_top)
+  scaled_data, #log2_data or scaled_data or only the top metabolites (scaled_data_top)
   metabGroups_nov20, #Select the whole dataset of 60 metabolites or the top 20 contributing metabolites me
-  "Top Metabolites by Progression", 
-  "71_PFS Metabolites Nov20_top zScaled data -rows cols euclidian ward -scale till 3.pdf"
+  "Metabolites by Progression", 
+  "74_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward -scale till 3 - size20x16.pdf"
 )
 
 
