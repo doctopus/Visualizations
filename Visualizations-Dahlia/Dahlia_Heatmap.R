@@ -169,7 +169,7 @@ plot_and_save_heatmap_pfs <- function(normalizedCountsData, sample_data_subset, 
   # Calculate height based on number of genes
   # height <- max(12, nrow(normalizedCountsData) * 0.2)  # Adjust the multiplier (0.2) as needed
   height <- 20
-  width <- 18 #16 or 10.5
+  width <- 12 #16 or 10.5
   datetime <- format(Sys.time(), "%Y%m%d.%H%M%S")
   fileName <- paste(datetime, base_filename, sep="_")
   
@@ -217,14 +217,22 @@ log2_data <- as.matrix(log2_transform(metabData_nov20))
 sum(is.infinite(log2_data))
 sum(is.na(log2_data))
 
-#Prepare File Name
+#Prepare Only the top contributing metabolite by filtering from the list generated from the PCA top loadings
+#Source the combined group of top metabolites as combined_metabolite list. 
+metabData_nov20_top <- metabData_nov20[rownames(metabData_nov20) %in% combined_top_metabolites, ]
+#Metabolitewise scale the data using scale function
+# Apply scaling to each row
+scaled_data_top <- t(apply(metabData_nov20_top, 1, scale_rows))
+# In case any rows have standard deviation of 0 (constant values),
+# they will result in NaN. We can replace these with 0:
+scaled_data_top[is.nan(scaled_data_top)] <- 0
 
 #### Plot and save the heatmap
 plot_and_save_heatmap_pfs(
-  scaled_data, #log2_data or scaled_data
-  metabGroups_nov20, 
-  "Metabolites by Progression", 
-  "70_PFS Metabolites Nov20 zScaled data -rows cols euclidian ward -scale till 3.pdf"
+  scaled_data_top, #log2_data or scaled_data or only the top metabolites (scaled_data_top)
+  metabGroups_nov20, #Select the whole dataset of 60 metabolites or the top 20 contributing metabolites me
+  "Top Metabolites by Progression", 
+  "71_PFS Metabolites Nov20_top zScaled data -rows cols euclidian ward -scale till 3.pdf"
 )
 
 

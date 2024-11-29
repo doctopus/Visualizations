@@ -162,6 +162,16 @@ print(gbm_top_metabolites$PC1_top)
 print("\nTop PC2 contributors:")
 print(gbm_top_metabolites$PC2_top)
 
+# To view the results:
+print("Top PC1 contributors:")
+print(pfs_top_metabolites$PC1_top)
+print("\nTop PC2 contributors:")
+print(pfs_top_metabolites$PC2_top)
+
+#Get list of top 20 metabolites of PC1 and PC2 as a list
+typeof(pfs_top_metabolites)
+combined_top_metabolites <- unique(c(pfs_top_metabolites$PC1_top$metabolite, pfs_top_metabolites$PC2_top$metabolite))
+
 
 #### # Function to create loading plots ----
 plot_top_loadings <- function(pca_loadings, title) {
