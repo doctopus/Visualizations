@@ -1,5 +1,5 @@
 #The following code for plotting a heatmap from metabolomics data of 61 metabolites
-#Rows have Gene/Protein names, columns have sample names; first row has grroup data such as PFS
+#Rows have Gene/Protein names, columns have sample names; first row has group data such as PFS
 library(dplyr)
 library(openxlsx)
 library(tidyverse)
