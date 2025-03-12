@@ -3,7 +3,7 @@
 library(dplyr)
 library(openxlsx)
 getwd()
-setwd("/Users/i/Dropbox/Clinic3.0/Developer/RStudio/Visualizations/Yu-Jing")
+setwd("/Users/i/Dropbox/Clinic3.0/Developer/RStudio/Visualizations/Visualizations-Jing")
 
 data <- read.table("input/Jenifer_Yu_Spatial_Protein_Dataset.txt", header = TRUE, sep = "\t")
 

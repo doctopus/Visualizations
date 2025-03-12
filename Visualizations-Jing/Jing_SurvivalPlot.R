@@ -34,8 +34,10 @@ ggplot() +
   geom_segment(data = data_surv,
                aes(x = 0, xend = ttLfp, 
                    y = reorder(factor(Subject), ttLfp),
-                   yend = reorder(factor(Subject), ttLfp),
-                   color = as.factor(Sex)),
+                   yend = reorder(factor(Subject), ttLfp)),
+                   #color = as.factor(Sex)), #Remove color by sex
+               color = "#4C6EF5",
+               show.legend = FALSE,
                size = 2.5) +
   
   # Status markers
@@ -71,9 +73,10 @@ ggplot() +
                      values = status_info$symbol,
                      breaks = c("Death", "Last Followup", "Progression")) +
   
-  scale_color_manual("Sex",
-                     values = c("0" = "#BE4BDB", "1" = "#4C6EF5"),
-                     labels = c("Female", "Male")) +
+  #Remove Sex Legend
+  # scale_color_manual("Sex",
+  #                    values = c("0" = "#BE4BDB", "1" = "#4C6EF5"),
+  #                    labels = c("Female", "Male")) +
   
   # Labels and theme
   labs(x = "Months since surgery",

@@ -78,6 +78,9 @@ ratio_matrix <- cytokine_ratios %>%
   select(-Subject) %>%
   as.matrix()
 
+#Step5.1 Rename PDL1B7H1 to only PDL1
+colnames(ratio_matrix)[colnames(ratio_matrix) == "PD.L1.B7.H1"] <- "PDL1"
+
 # Set row names as subject numbers
 rownames(ratio_matrix) <- cytokine_ratios$Subject
 
@@ -116,7 +119,7 @@ pheatmap(
   main = "Cytokine Expression Changes\n(Z-scores Normalized Ratios)", #"Cytokine Expression Ratio (log2(T2/T1))", #"Cytokine Expression Changes\n(Global Z-score normalization across all measurements)", ##, #
   fontsize_row = 15,
   fontsize_col = 15,
-  display_numbers = TRUE,
+  display_numbers = FALSE,
   angle_col = 0
 )
 
