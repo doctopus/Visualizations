@@ -86,12 +86,14 @@ ggplot() +
   theme_minimal() +
   theme(
     panel.grid.minor = element_blank(),
-    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-    axis.title = element_text(size = 14, face = "bold"),
-    axis.text = element_text(size = 12, face = "bold"), 
-    legend.position = "right",
+    plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 18, face = "bold"),
+    axis.text = element_text(size = 16, face = "bold"), 
+    #legend.position = "right",
+    legend.position = c(0.8, 0.5),
     legend.box = "vertical",
-    legend.title = element_text(face = "bold"),
+    legend.title = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14, face = "bold"),
     legend.key.size = unit(2, "lines")
   ) +
   guides(shape = guide_legend(order = 1),

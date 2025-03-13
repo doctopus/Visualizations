@@ -60,7 +60,9 @@ data_F_R.H.F <- data1 %>% select(matches("ROI.R.H.F.Tumor|Protien"))
 library(purrr)
 
 # List of datasets
-datasets_list <- list(data_M_C.M, data_M_R.M, data_M_H.M, data_M_R.H.M, data_F_C.F, data_F_R.F, data_F_H.F, data_F_R.H.F)
+datasets_list <- list(data_M_C.M, data_M_R.M, data_M_H.M, data_M_R.H.M #, 
+                      ###data_F_C.F, data_F_R.F, data_F_H.F, data_F_R.H.F #Remove the female data
+                      )
 
 # Purrr: Reduce the list of datasets by left joining based on the "Protien" column
 combined_data <- datasets_list %>%
@@ -70,7 +72,7 @@ combined_data <- datasets_list %>%
 rownames(combined_data) <- combined_data$Protien
 combined_data <- combined_data[, -which(colnames(combined_data) == "Protien")]
 #Decide to Remove CD3e row
-# combined_data <- combined_data[!(row.names(combined_data) %in% c("CD3e")),]
+combined_data <- combined_data[!(row.names(combined_data) %in% c("CD3e")),]
 
 #SKIP -Create sample_info data template to modify from column names of commbined_data
 # sample_info <- data.frame(row.names = colnames(combined_data))
@@ -137,9 +139,10 @@ create_heatmap <- function(count_scores, pathway, sample_data) {
   
   # Create top annotation with custom colors
   ha_top <- HeatmapAnnotation(
-    Sex = sample_data$Sex,
+    ###Sex = sample_data$Sex,
     Experiment = sample_data$Experiment,
-    col = list(Sex = neuron_colors, Experiment = slide_colors),
+    col = list(###Sex = neuron_colors, 
+               Experiment = slide_colors),
     show_annotation_name = TRUE,
     annotation_name_side = "right",
     gap = unit(2, "mm"),
@@ -170,7 +173,7 @@ create_heatmap <- function(count_scores, pathway, sample_data) {
                 # row_title_side = c("left", "right"),
                 row_names_gp = gpar(fontsize = 20, fontface = "bold"),
                 top_annotation = ha_top,
-                column_split = sample_data$Sex, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
+                column_split = sample_data$Experiment, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
                 # column_order = column_order, #Needed for matching legend order with column order
                 column_gap = unit(2, "mm"), #Option
                 border = TRUE, #Option
@@ -209,7 +212,7 @@ create_heatmap <- function(count_scores, pathway, sample_data) {
   
   # Combine all legends into a single column
   combined_legend <- packLegend(
-    sex_legend,
+    ###sex_legend,
     experiment_legend,
     expression_legend,
     direction = "horizontal", #vertical or horizontal
@@ -262,7 +265,7 @@ plot_and_save_heatmap(
   scaled_data, #combined_data or scaled_data
   sample_info, 
   "Protein Expression", 
-  "output/0_Protein_Expression.pdf"
+  "output/4_Protein_Expression_Only_Male_Data.pdf"
 )
 
 ##SKIP START(For Deciding Scale Range)----
