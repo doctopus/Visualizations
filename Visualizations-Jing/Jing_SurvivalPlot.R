@@ -98,3 +98,7 @@ ggplot() +
   ) +
   guides(shape = guide_legend(order = 1),
          color = guide_legend(order = 2))
+
+
+# Save the Data for to Submit
+write.xlsx(data_survival, "Survival Data.xlsx", showNA = FALSE)

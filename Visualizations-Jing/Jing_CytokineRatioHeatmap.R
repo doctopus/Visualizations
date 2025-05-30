@@ -6,16 +6,16 @@ library(pheatmap)
 library(scales)
 getwd()
 # setwd("/Users/i/Dropbox/Clinic3.0/Developer/RStudio/Visualizations/Visualizations-Jing")
-data <- read.table("input/cytokine/Input data (before normalization) for cytokine heatmap_7 pts.csv", header = TRUE, sep = ",")
+cytokineData <- read.table("input/cytokine/Input data (before normalization) for cytokine heatmap_7 pts.csv", header = TRUE, sep = ",")
 
 # Data wrangling - removed unnecessary curly braces
-cytokine_cols <- setdiff(names(data), c("X", "Subject", "Group", "Timepoint"))
+cytokine_cols <- setdiff(names(cytokineData), c("X", "Subject", "Group", "Timepoint"))
 
 # Step 1: Get cytokine column names
-cytokine_cols <- setdiff(names(data), c("X", "Subject", "Group", "Timepoint"))
+cytokine_cols <- setdiff(names(cytokineData), c("X", "Subject", "Group", "Timepoint"))
 
 # Step 2: Remove X column and reshape data to wide format
-wide_data <- data %>%
+wide_data <- cytokineData %>%
   select(-X) %>%
   pivot_wider(
     id_cols = Subject,
@@ -122,6 +122,9 @@ pheatmap(
   display_numbers = FALSE,
   angle_col = 0
 )
+
+# Save the Data for to Submit
+write.xlsx(wide_data, "Cytokine Data.xlsx", showNA = FALSE)
 
 # Different clustering methods available:
 clustering_options <- list(

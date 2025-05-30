@@ -370,8 +370,8 @@ view(diffdata)
 
 #Dahlia GBM 3 Groups PFS 0, PFS 1, Control 2 Data----
 # Transpose the gbm_metab data
-# transposed_gbm_metab <- gbm_metab %>% t() #[For GBM Dataset] [INPUT_NEEDED]
-transposed_gbm_metab <- progression_data %>% select(-(last_col(offset =2):last_col())) %>% t() #[INPUT_NEEDED]For PFS Data
+transposed_gbm_metab <- gbm_metab %>% t() #[For GBM Dataset] [INPUT_NEEDED]
+# transposed_gbm_metab <- progression_data %>% select(-(last_col(offset =2):last_col())) %>% t() #[INPUT_NEEDED]For PFS Data
   
 transposed_gbm_metab <- cbind(Samples = rownames(transposed_gbm_metab), transposed_gbm_metab)
 
@@ -411,8 +411,8 @@ transposed_gbm_metab <- as.data.frame(transposed_gbm_metab) %>%
 ####Extra step ENDS for GBM data
 
 #Keep only first two columns
-# gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(GBM =as.factor(GBM)) #[INPUT_NEEDED]
-gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(PFS =as.factor(PFS)) #For PFS
+gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(GBM =as.factor(GBM)) #[INPUT_NEEDED]
+# gbm_sample_info <- transposed_gbm_metab %>% select(1:2) %>% mutate(PFS =as.factor(PFS)) #For PFS
 #Make the Sample column as the rownames and remove that column
 # rownames(gbm_sample_info) <- gbm_sample_info$Samples
 

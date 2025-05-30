@@ -268,6 +268,10 @@ plot_and_save_heatmap(
   "output/4_Protein_Expression_Only_Male_Data.pdf"
 )
 
+# Save the Data for to Submit
+write.xlsx(combined_data, "Protein Expression Data.xlsx", showNA = FALSE)
+# 
+# 
 ##SKIP START(For Deciding Scale Range)----
 #Get an estimate of score range in scaled data to cap the range
 # Basic statistics
