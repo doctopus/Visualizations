@@ -94,7 +94,7 @@ gbm_pca <- create_pca_plots(
 # Display the plots
 print(gbm_pca$plot + 
         scale_color_manual(name = "Diagnosis",
-                           values = c("0" = "#2E86C1", "1" = "#E74C3C"),
+                           values = c("0" = "#606060", "1" = "#5757f9"),
                            labels = c("0" = "Control", "1" = "Glioblastoma")
                            )
       )
@@ -110,7 +110,7 @@ pfs_pca <- create_pca_plots(
 )
 print(pfs_pca$plot + 
         scale_color_manual(name = "Progression Status",
-                           values = c("0" = "#F59F00", "1" = "#37B24D"),
+                           values = c("0" = "#FF8000", "1" = "#00c000"),
                            labels = c("0" = "Progressed at 9 Months", "1" = "Not Progressed at 9 Months")
                            )
         )

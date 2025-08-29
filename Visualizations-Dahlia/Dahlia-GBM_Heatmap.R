@@ -66,7 +66,7 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
   sample_data$GBM <- factor(sample_data$GBM, levels = experiment_order)
   
   # Create color vectors for each annotation
-  slide_colors <- setNames(c("#EC756B", "#5399CA"), experiment_order)#, "#049193", "#5B2897", pink#FF3079
+  slide_colors <- setNames(c("#5757f9", "#606060"), experiment_order)#, "#049193", "#5B2897", pink#FF3079 brick"#EC756B" cement"#5399CA"
   # neuron_colors <- setNames(c("#007DEF", "#F08C00"), sex_order)
   
   # Create a diverging color palette for z-Score Normalized data
@@ -74,7 +74,7 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
   colors <- colorRampPalette(c("blue", "white", "red"))(101)
   # max_abs <- max(abs(count_scores))
   # max_abs <- max(5, max(abs(count_scores))) #To cap the range of colors at 5. (The range is till 9, more than 5 would have only 21 extreme values)
-  max_abs <- 3
+  max_abs <- 2
   breaks <- seq(-max_abs, max_abs, length.out = 101)
   # breaks <- seq(-3, 12, length.out = 101)
   
@@ -130,11 +130,11 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
                 # row_title_side = c("left", "right"),
                 row_names_gp = gpar(fontsize = 20, fontface = "bold"),
                 top_annotation = ha_top,
-                clustering_distance_rows = "euclidean",
-                clustering_method_rows = "ward.D", #default is complete, ward is renamed to ward.D and there is ward.D2
-                clustering_distance_columns = "euclidean",
-                clustering_method_columns = "ward.D",
-                column_split = sample_data$GBM, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
+                clustering_distance_rows = "spearman",
+                clustering_method_rows = "average", #default is complete, ward is renamed to ward.D and there is ward.D2
+                clustering_distance_columns = "spearman",
+                clustering_method_columns = "average",
+                # column_split = sample_data$GBM, #[INPUT_NEEDED] Change between sample_data$Sex or sample_data$Experiment
                 # column_order = column_order, #Needed for matching legend order with column order
                 # column_gap = unit(2, "mm"), #Option
                 border = TRUE, #Option
@@ -152,9 +152,11 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
   # )
   # 
   experiment_legend <- Legend(
-    labels = experiment_order,
+    # labels = experiment_order,
+    labels = rev(c("Healthy", "GBM")), #Reverse names (need to reverse legend_gp too)
     labels_gp = gpar(fontsize = 20, fontface='bold'),#Increase size of labels
     legend_gp = gpar(fill = slide_colors),
+    # legend_gp = gpar(fill = rev(slide_colors)), #Reverse associated colors too (need to have labels reversed too)
     row_gap = unit(2, "mm"),
     title = "GBM",
     title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
@@ -168,7 +170,10 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
     column_gap = unit(5, "mm"), 
     row_gap = unit(5, "mm"),
     title = "Expression",
-    title_gp = gpar(fontsize = 22, fontface='bold') #Increase size of legend label
+    title_gp = gpar(fontsize = 22, fontface='bold'), #Increase size of legend label
+    direction = "horizontal",  # Add this line to make the legend horizontal
+    legend_height = unit(2, "cm"), # Optionally adjust the legend size
+    legend_width = unit(8, "cm")
   )
   
   # Combine all legends into a single column
@@ -177,7 +182,7 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
     experiment_legend,
     expression_legend,
     direction = "horizontal", #vertical or horizontal
-    gap = unit(5, "mm")
+    gap = unit(15, "mm")
   )
   
   num_rows <- nrow(count_scores)
@@ -187,7 +192,7 @@ create_heatmap_gbm <- function(count_scores, pathway, sample_data) {
   draw(ht, 
        annotation_legend_side = "bottom",
        annotation_legend_list = combined_legend,
-       padding = unit(c(2, 10, 2, 60), "mm"),#x, left, y, right
+       padding = unit(c(2, 20, 2, 80), "mm"),#x, left, y, right
        height = total_height)
 }
 plot_and_save_heatmap_gbm <- function(normalizedCountsData, sample_data_subset, pathway, output_file) {
@@ -210,18 +215,19 @@ scale_rows <- function(x) {
   (x - mean(x)) / sd(x)
 }
 # Apply scaling to each row
-scaled_data <- t(apply(metabData, 1, scale_rows))
+scaled_data_gbm <- t(apply(metabData, 1, scale_rows))
 # In case any rows have standard deviation of 0 (constant values),
 # they will result in NaN. We can replace these with 0:
-scaled_data[is.nan(scaled_data)] <- 0
+scaled_data_gbm[is.nan(scaled_data)] <- 0
 
 #Plot Histogram to see distribution of scaled data to decide if need to cap the color range
-hist(scaled_data, breaks = 50, main="Distribution Scaled Data", xlab= "Scaled Values of Metabolites")
+hist(scaled_data_gbm, breaks = 50, main="Distribution of GBM Scaled Data", xlab= "Scaled Values of Metabolites")
+abline(v = c(-2, 2), col = "red")
 
 # Plot and save the heatmap
 plot_and_save_heatmap_gbm(
-  scaled_data, #data_metab_final or scaled_data
+  scaled_data_gbm, #data_metab_final or scaled_data
   metabGroups, 
   "Metabolites in GBM vs Control", 
-  "20250605_6_Range 3 GBM_Metabolite_No Column Split eucledian and ward.D both rows and columns.pdf"
+  "20250613_GBM Metabolites -Distance-spearman Clustering-average.pdf"
 )
